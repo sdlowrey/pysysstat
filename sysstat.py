@@ -40,17 +40,13 @@ class Converter(object):
     """
     Class to handle data format conversion for sysstat data collector files.
     """
-    def __init__(self, infile, outfile=None):
+    def __init__(self, infile, outfile=sys.stdout):
         """
         Construct Converter for infile.  Result will be written to outfile
         (default: stdout)
         """
-        if not os.access(infile, os.R_OK):
-            raise IOError(FILE_READ_FAIL.format(infile))
         self.infile = infile
-        if outfile is None:
-            if not os.access(outfile, os.W_OK):
-                raise IOError(FILE_WRITE_FAIL.format(outfile))
+        if outfile != sys.stdout:
             self._out = open(outfile, 'w')
         else:
             self._out = sys.stdout
@@ -65,6 +61,8 @@ class Converter(object):
         """
         self._build_sadf_command(interval)
         self._run_sadf()
+        if self._out != sys.stdout:
+            self._out.close()
 
     def _build_sadf_command(self, interval):
         """
@@ -87,4 +85,3 @@ class Converter(object):
         Run the sadf command in a subprocess and let it write to _outfile.
         """
         subprocess.check_call(self._sadf, stdout=self._out)
-    
