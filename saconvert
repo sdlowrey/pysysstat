@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+import argparse
+import json
+import subprocess
+import sys
+
+sadf_options = {'json': '-j', 'xml': '-x', 'line': '-p'}
+
+PAGING      = '-B'
+IO          = '-b'
+DISK        = '-d'
+DISK_LABELS = '-j LABEL'  # problematic
+NET_DEV     = '-n'
+NET_DEV_N   = 'DEV,EDEV'
+CPU_STAT    = '-P'
+CPU_STAT_N  = 'ALL'
+CPU_UTIL    = '-u'
+SCHEDULER   = '-q'
+TASKS       = '-w'
+MEM_STAT    = '-R'
+MEM_UTIL    = '-r'
+SWAP_STAT   = '-W'
+SWAP_UTIL   = '-S'
+
+parser = argparse.ArgumentParser(
+    description="Convert sysstat collector (sadc) data to something else.")
+
+parser.add_argument('infile', metavar='INPUT', help="binary SA data")
+parser.add_argument('--outfile', default=sys.stdout, help='text output')
+parser.add_argument('--format', default='line', help="output format", 
+                    choices=sadf_options.keys())
+parser.add_argument('--interval', default=1, type=int, help="sampling interval")
+
+args = parser.parse_args()
+print args
+
+# sar options after "--": report everything except interrupts, hugepages, power,
+# NFS, IPv6, 
+cmd = ['sadf', sadf_options[args.format], '--', 
+       PAGING, IO, DISK, NET_DEV, NET_DEV_N, CPU_STAT, CPU_STAT_N, CPU_UTIL, 
+       SCHEDULER, TASKS, MEM_STAT, MEM_UTIL, SWAP_STAT, SWAP_UTIL, 
+       '{}'.format(args.interval), args.infile]
+
+output = args.outfile
+if args.outfile != sys.stdout:
+    try:
+        output = open(args.outfile, 'w')
+    except:
+        print 'Unable to write to {}'.format(args.outfile)
+        sys.exit(1)
+        
+subprocess.check_call(cmd, stdout=output)
+
+    
