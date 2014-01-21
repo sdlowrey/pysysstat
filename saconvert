@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-
+"""
+Command line wrapper for sysstat Converter class
+"""
 import argparse
-import json
 import subprocess
 import sys
 import sysstat
@@ -11,7 +12,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('infile', metavar='INPUT', help="binary SA data")
 parser.add_argument('--outfile', default=sys.stdout, help='text output')
-#parser.add_argument('--format', default='line', help="output format", 
+#parser.add_argument('--format', default='line', help="output format",
 #                    choices=sadf_options.keys())
 parser.add_argument('--interval', default=1, type=int, help="sampling interval")
 
@@ -20,10 +21,8 @@ args = parser.parse_args()
 try:
     converter = sysstat.Converter(args.infile, args.outfile)
     converter.convert()
-except Exception, e:
-    print e.msg
+except IOError, e:
+    print e.message
     sys.exit(2)
-
-
-
-    
+except subprocess.CalledProcessError, e:
+    print 'Subprocess error: {}'.format(e.message)
