@@ -21,7 +21,7 @@ args = parser.parse_args()
 try:
     converter = sysstat.Converter(args.infile, args.outfile)
     converter.convert()
-except IOError, e:
+except OSError, e:
     print e.message
     sys.exit(2)
 except subprocess.CalledProcessError, e:
