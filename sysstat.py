@@ -1,7 +1,7 @@
 """
-Sysstat data processing for Python.
+Convert sysstat binary data to JSON.
 """
-import os
+import json
 import subprocess
 import sys
 
@@ -47,10 +47,12 @@ class Converter(object):
         """
         self.infile = infile
         if outfile != sys.stdout:
-            self._out = open(outfile, 'w')
+            self.outfile = outfile
+            self._out = open(outfile, 'r')
         else:
             self._out = sys.stdout
         self._sadf = ['sadf', '-j', '--']
+        self.data = None
 
     def convert(self, interval=1):
         """
@@ -63,6 +65,8 @@ class Converter(object):
         self._run_sadf()
         if self._out != sys.stdout:
             self._out.close()
+            json_data = open(self.outfile)
+            self.data = json.load(json_data)
 
     def _build_sadf_command(self, interval):
         """
