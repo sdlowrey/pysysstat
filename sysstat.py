@@ -36,13 +36,13 @@ DATA_COMPAT = 'Data file format is not compatible'
 FILE_READ_FAIL = 'Unable to read {}'
 FILE_WRITE_FAIL = 'Unable to write {}'
 
-class Converter(object):
+class TimeSeries(object):
     """
-    Class to handle data format conversion for sysstat data collector files.
+    A collection of time series data points from sysstat.
     """
     def __init__(self, infile, outfile=sys.stdout):
         """
-        Construct Converter for infile.  Result will be written to outfile
+        Construct TimeSeries for infile.  Result will be written to outfile
         (default: stdout)
         """
         self.infile = infile
@@ -56,8 +56,7 @@ class Converter(object):
 
     def convert(self, interval=1):
         """
-        Convert sysstat binary data to a text format.  Format can be
-        FORMAT_LINE, FORMAT_JSON, or FORMAT_XML.
+        Convert sysstat binary data to a text format.
 
         Specify sample interval in seconds (default is 1).
         """
@@ -65,9 +64,17 @@ class Converter(object):
         self._run_sadf()
         if self._out != sys.stdout:
             self._out.close()
-            json_data = open(self.outfile)
-            self.data = json.load(json_data)
 
+    def load_json(self, infile):
+        """
+        Load a JSON sysstat file and "unwrap" it
+        """
+        json_data = open(infile)
+        self.data = json.load(json_data)
+        
+    def version(self):
+        return self.data['sysstat']['sysdata-version']
+    
     def _build_sadf_command(self, interval):
         """
         Build the sadf command, which takes its own options plus sar
