@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import time
 
 # Just do JSON for now.  Leaving this here in case I need it later.
 #FORMAT_LINE = 0
@@ -50,50 +51,13 @@ class TimeSeries(object):
         """
         self.infile = infile
         self._out = tempfile.SpooledTemporaryFile()
+        # could be a constant but might add XML or other options later...
         self._sadf = ['sadf', '-j', '--']
         self._alldata = None
+        self._tsdata = None
+        self._host = None
+        self._data_version = None
 
-    def convert(self, interval=1):
-        """
-        Convert sysstat binary data to a text format.
-
-        Specify sample interval in seconds (default is 1).
-        """
-        self._build_sadf_command(interval)
-        self._run_sadf()
-        self._parse_json()
-
-    def _parse_json(self):
-        """
-        Load a JSON sysstat data from the tempfile that sadf wrote to.  
-        """
-        self._out.seek(0)
-        self._alldata = json.load(self._out)
-        self._data_version = self._alldata['sysstat']['sysdata-version']
-        # the hosts key is a list but should only ever contain one element
-        self._host = self._alldata['sysstat']['hosts'][0]
-        self._tsdata = self._host['statistics']
-        
-    def dump(self, out=sys.stdout):
-        """
-        Dump JSON format.  Output must be an open file descriptor (default is stdout).
-        """
-        if self._alldata is None:
-            raise TimeSeriesError(NO_DATA_ERR)
-        out.write(json.dumps(self._alldata, indent=4, sort_keys=False))
-        
-    @property
-    def version(self):
-        return self._data_version
-    
-    @property
-    def hostname(self):
-        return self._host['nodename']
-    
-    @property
-    def date(self):
-        return self._host['file-date']
-    
     def _build_sadf_command(self, interval):
         """
         Build the sadf command, which takes its own options plus sar
@@ -116,3 +80,63 @@ class TimeSeries(object):
         Run the sadf command in a subprocess and let it write to a spooled file.
         """
         subprocess.check_call(self._sadf, stdout=self._out)
+
+    def _parse_json(self):
+        """
+        Load a JSON sysstat data from the tempfile that sadf wrote to.  
+        """
+        self._out.seek(0)
+        self._alldata = json.load(self._out)
+        self._data_version = self._alldata['sysstat']['sysdata-version']
+        # the hosts key is a list but should only ever contain one element
+        self._host = self._alldata['sysstat']['hosts'][0]
+        self._tsdata = self._host['statistics']
+
+    def convert(self, interval=1):
+        """
+        Convert sysstat binary data to a text format.
+
+        Specify sample interval in seconds (default is 1).
+        """
+        self._build_sadf_command(interval)
+        self._run_sadf()
+        self._parse_json()
+        
+    def dump(self, out=sys.stdout):
+        """
+        Dump JSON format.  Output must be an open file descriptor (default is stdout).
+        """
+        if self._alldata is None:
+            raise TimeSeriesError(NO_DATA_ERR)
+        out.write(json.dumps(self._alldata, indent=4, sort_keys=False))
+
+    def _integer_time_array(self):
+        # convert the date and time strings in each record to epoch seconds
+        tsarray = []
+        for datapoint in self._tsdata:
+            ts = datapoint['timestamp']
+            stime = '{} {}'.format(ts['date'], ts['time'])
+            itime = time.mktime(time.strptime(stime, '%Y-%m-%d %H:%M:%S'))
+            tsarray.append(int(itime))
+        return tsarray
+
+    @property
+    def int_time_array(self):
+        return self._integer_time_array()
+            
+    @property
+    def datapoints(self):
+        return self._tsdata
+    
+    @property
+    def version(self):
+        return self._data_version
+    
+    @property
+    def hostname(self):
+        return self._host['nodename']
+    
+    @property
+    def date(self):
+        return self._host['file-date']
+    
