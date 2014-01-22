@@ -28,5 +28,8 @@ except OSError, e:
 except subprocess.CalledProcessError, e:
     print 'Subprocess error: {}'.format(e.message)
 
-print 'sysdata ver: {}'.format(data.version())
+print 'sysdata ver: {}'.format(data.version)
+print 'description'
+print '  host:   {}'.format(data.hostname)
+print '  date:   {}'.format(data.date)
     

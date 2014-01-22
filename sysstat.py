@@ -67,13 +67,26 @@ class TimeSeries(object):
 
     def load_json(self, infile):
         """
-        Load a JSON sysstat file and "unwrap" it
+        Load a JSON sysstat file and parse it into several instance variables
         """
         json_data = open(infile)
-        self.data = json.load(json_data)
+        self._alldata = json.load(json_data)
+        self._data_version = self._alldata['sysstat']['sysdata-version']
+        # the hosts key is a list but should only ever contain one element
+        self._host = self._alldata['sysstat']['hosts'][0]
+        self._tsdata = self._host['statistics']
         
+    @property
     def version(self):
-        return self.data['sysstat']['sysdata-version']
+        return self._data_version
+    
+    @property
+    def hostname(self):
+        return self._host['nodename']
+    
+    @property
+    def date(self):
+        return self._host['file-date']
     
     def _build_sadf_command(self, interval):
         """
