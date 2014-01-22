@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Command line wrapper for sysstat Converter class
+Command line wrapper for sysstat TimeSeries class
 """
 import argparse
 import subprocess
@@ -12,6 +12,8 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('infile', metavar='INPUT', help="binary SA data")
 parser.add_argument('--interval', default=1, type=int, help="sampling interval")
+parser.add_argument('--dump', action='store_true', help="dump JSON to stdout")
+parser.add_argument('--outfile', help="name of file to write JSON to")
 
 args = parser.parse_args()
 
@@ -28,4 +30,9 @@ print 'sysdata ver: {}'.format(data.version)
 print 'description'
 print '  host:   {}'.format(data.hostname)
 print '  date:   {}'.format(data.date)
-    
+if args.dump:
+    data.dump()
+if args.outfile:
+    f = open(args.outfile, 'w')
+    data.dump(f)
+    f.close()

@@ -33,9 +33,11 @@ MEM_UTIL    = '-r'
 SWAP_STAT   = '-W'
 SWAP_UTIL   = '-S'
 
-DATA_COMPAT = 'Data file format is not compatible'
-FILE_READ_FAIL = 'Unable to read {}'
-FILE_WRITE_FAIL = 'Unable to write {}'
+DATA_COMPAT_ERR = 'Data file format is not compatible'
+NO_DATA_ERR     = 'Object has no data'
+
+class TimeSeriesError(Exception):
+    pass
 
 class TimeSeries(object):
     """
@@ -49,7 +51,7 @@ class TimeSeries(object):
         self.infile = infile
         self._out = tempfile.SpooledTemporaryFile()
         self._sadf = ['sadf', '-j', '--']
-        self.data = None
+        self._alldata = None
 
     def convert(self, interval=1):
         """
@@ -71,6 +73,14 @@ class TimeSeries(object):
         # the hosts key is a list but should only ever contain one element
         self._host = self._alldata['sysstat']['hosts'][0]
         self._tsdata = self._host['statistics']
+        
+    def dump(self, out=sys.stdout):
+        """
+        Dump JSON format.  Output must be an open file descriptor (default is stdout).
+        """
+        if self._alldata is None:
+            raise TimeSeriesError(NO_DATA_ERR)
+        out.write(json.dumps(self._alldata, indent=4, sort_keys=False))
         
     @property
     def version(self):
