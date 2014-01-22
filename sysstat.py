@@ -109,6 +109,7 @@ class TimeSeries(object):
         for opt in sar_opts:
             self._sadf.append(opt)
         self._sadf.append('{}'.format(interval))
+        self._sadf.append('{}'.format(self.infile))
 
     def _run_sadf(self):
         """
