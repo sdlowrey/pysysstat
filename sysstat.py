@@ -4,6 +4,7 @@ Convert sysstat binary data to JSON.
 import json
 import subprocess
 import sys
+import tempfile
 
 # Just do JSON for now.  Leaving this here in case I need it later.
 #FORMAT_LINE = 0
@@ -40,17 +41,13 @@ class TimeSeries(object):
     """
     A collection of time series data points from sysstat.
     """
-    def __init__(self, infile, outfile=sys.stdout):
+    def __init__(self, infile):
         """
         Construct TimeSeries for infile.  Result will be written to outfile
         (default: stdout)
         """
         self.infile = infile
-        if outfile != sys.stdout:
-            self.outfile = outfile
-            self._out = open(outfile, 'r')
-        else:
-            self._out = sys.stdout
+        self._out = tempfile.SpooledTemporaryFile()
         self._sadf = ['sadf', '-j', '--']
         self.data = None
 
@@ -62,15 +59,14 @@ class TimeSeries(object):
         """
         self._build_sadf_command(interval)
         self._run_sadf()
-        if self._out != sys.stdout:
-            self._out.close()
+        self._parse_json()
 
-    def load_json(self, infile):
+    def _parse_json(self):
         """
-        Load a JSON sysstat file and parse it into several instance variables
+        Load a JSON sysstat data from the tempfile that sadf wrote to.  
         """
-        json_data = open(infile)
-        self._alldata = json.load(json_data)
+        self._out.seek(0)
+        self._alldata = json.load(self._out)
         self._data_version = self._alldata['sysstat']['sysdata-version']
         # the hosts key is a list but should only ever contain one element
         self._host = self._alldata['sysstat']['hosts'][0]
@@ -106,6 +102,6 @@ class TimeSeries(object):
 
     def _run_sadf(self):
         """
-        Run the sadf command in a subprocess and let it write to _outfile.
+        Run the sadf command in a subprocess and let it write to a spooled file.
         """
         subprocess.check_call(self._sadf, stdout=self._out)

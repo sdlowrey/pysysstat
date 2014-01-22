@@ -11,17 +11,13 @@ parser = argparse.ArgumentParser(
     description="Convert sysstat collector (sadc) data to something else.")
 
 parser.add_argument('infile', metavar='INPUT', help="binary SA data")
-parser.add_argument('--outfile', default=sys.stdout, help='text output')
-#parser.add_argument('--format', default='line', help="output format",
-#                    choices=sadf_options.keys())
 parser.add_argument('--interval', default=1, type=int, help="sampling interval")
 
 args = parser.parse_args()
 
 try:
-    data = sysstat.TimeSeries(args.infile, args.outfile)
+    data = sysstat.TimeSeries(args.infile)
     data.convert()
-    data.load_json(args.outfile)
 except OSError, e:
     print e.message
     sys.exit(2)
