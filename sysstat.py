@@ -37,6 +37,8 @@ SWAP_UTIL   = '-S'
 DATA_COMPAT_ERR = 'Data file format is not compatible'
 NO_DATA_ERR     = 'Object has no data'
 
+ISO_8601_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
 class TimeSeriesError(Exception):
     pass
 
@@ -57,6 +59,8 @@ class TimeSeries(object):
         self._tsdata = None
         self._host = None
         self._data_version = None
+        self._unix_time = None
+        self._offset_time = None
 
     def _build_sadf_command(self, interval):
         """
@@ -110,19 +114,40 @@ class TimeSeries(object):
             raise TimeSeriesError(NO_DATA_ERR)
         out.write(json.dumps(self._alldata, indent=4, sort_keys=False))
 
-    def _integer_time_array(self):
-        # convert the date and time strings in each record to epoch seconds
-        tsarray = []
+    def _string_to_unix_time(self, sdate, stime):
+        # convert ISO 8601 date/time strings to unix time integer
+        datetime = '{} {}'.format(sdate, stime)
+        itime = time.mktime(time.strptime(datetime, ISO_8601_TIME_FORMAT))
+        return int(itime)
+        
+    def _get_unix_times(self):
+        # return a list of timestamps in unix (integer) format
+        self._unix_time = []
         for datapoint in self._tsdata:
             ts = datapoint['timestamp']
-            stime = '{} {}'.format(ts['date'], ts['time'])
-            itime = time.mktime(time.strptime(stime, '%Y-%m-%d %H:%M:%S'))
-            tsarray.append(int(itime))
-        return tsarray
+            itime = self._string_to_unix_time(ts['date'], ts['time'])
+            self._unix_time.append(itime)
 
+    def _get_offset_times(self):
+        # return a list of timestamps in integer (second) offsets
+        if not self._unix_time:
+            self._get_unix_times()
+        self._offset_time = []
+        start = self._unix_time[0]
+        for t in self._unix_time:
+            self._offset_time.append(t - start)
+            
     @property
-    def int_time_array(self):
-        return self._integer_time_array()
+    def unix_times(self):
+        if not self._unix_time:
+            self._get_unix_times()
+        return self._unix_time
+    
+    @property
+    def offset_times(self):
+        if not self._offset_time:
+            self._get_offset_times()
+        return self._offset_time
             
     @property
     def datapoints(self):
@@ -139,4 +164,5 @@ class TimeSeries(object):
     @property
     def date(self):
         return self._host['file-date']
+    
     

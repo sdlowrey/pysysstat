@@ -14,7 +14,10 @@ parser.add_argument('infile', metavar='INPUT', help="binary SA data")
 parser.add_argument('--interval', default=1, type=int, help="sampling interval")
 parser.add_argument('--dump', action='store_true', help="dump JSON to stdout")
 parser.add_argument('--outfile', help="name of file to write JSON to")
-parser.add_argument('--time', action='store_true', help='print int time array')
+parser.add_argument('--utime', action='store_true', 
+                    help='print unix time array')
+parser.add_argument('--otime', action='store_true', 
+                    help='print offset time array')
 
 args = parser.parse_args()
 
@@ -36,5 +39,7 @@ if args.outfile:
     f = open(args.outfile, 'w')
     data.dump(f)
     f.close()
-if args.time:
-    print data.int_time_array
+if args.utime:
+    print data.unix_times
+if args.otime:
+    print data.offset_times
