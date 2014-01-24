@@ -43,3 +43,17 @@ if args.utime:
     print data.unix_times
 if args.otime:
     print data.offset_times
+    
+def dump_series(metrics):
+    for metric in metrics:
+        print '{}: '.format(metric), data.get_metrics(metric)
+    
+# simplest case for JSON metrics: single-level class with one node
+dump_series(['queue/plist-sz', 'paging/fault'])
+
+# next, single-level with multiple nodes
+dump_series(['disk/dev253-0/wr_sec', 'cpu-load/3/idle'])
+
+# two levels: class, subclass, multiple nodes
+dump_series(['network/net-dev/br1/rxkB','network/net-edev/lo/rxdrop'])
+   
